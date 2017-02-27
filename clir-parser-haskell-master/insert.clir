@@ -1,0 +1,64 @@
+;; These instructions makes the code available at any time. They can
+;; be removed, but then a Common-Lisp runtime will not know how to
+;; parse the file.
+;; (cl:eval-when (:compile-toplevel :load-toplevel :execute)
+;;   (load "init.lisp"))
+;; End of bogus instruction
+
+(verification-unit "insert"
+		   :sources "(((:lang :erlang)  (:module /insert.erl)))"
+		   :uses "(:ir)"
+		   :documentation "This is the implementation of a verified insertion sort in CLIR")
+
+
+
+(define insert ((x int) (m int) (a (array int))) ((res (array int)))
+  (declare
+   (assertion
+    (precd (and (@ <= (the int 0) m) (@ < m (@ len a)) (forall ((i int) (j int)) 
+                (-> (@ <= (the int 0) i) 
+                (-> (@ <= i j) 
+                (-> (@ < j m) 
+                    (@ <= (@ get_array a i) (@ get_array a j))))))))
+    (postcd (forall ((i int) (j int)) 
+                (-> (@ <= (the int 0) i) 
+                (-> (@ <= i j) 
+                (-> (@ <= j m) 
+                    (@ <= (@ get_array res i) (@ get_array res j)))))))))
+  (letfun (
+;; f1
+;;    (f1 ((x int) (m int) (a (array int))) ((res1 (array int))) 
+;;        (let ((i int)) (@ - m (the int 1)) (@ f2 x m i a)))
+;; f2
+    (f2 ((x int) (m int) (i int) (a (array int))) ((res2 (array int))) 
+        (let ((b1 bool)) (@ >= i (the int 0)) 
+         (case b1 ( 
+            ((@@ False) (@ f4 x m i a))
+            ((@@ True) (let ((e int)) (@ get-array a i) 
+                         (let ((b2 bool)) (@ < x e) 
+                         (case b2 (
+                            ((@@ True) (let ((e int)) (@ get-array a i) 
+                                       (let ((i2 int)) (@ + i (the int 1)) 
+                                       (let ((ap (array int))) (@ set-array a i2 e) 
+                                       (let ((i3 int)) (@ - i (the int 1)) (@ f2 x m i3 ap))))))
+                            ((@@ False) (@ f4 x m i a))
+                         )))))
+          ))
+         ))
+;; f3
+;;    (f3 ((x int) (m int) (i int) (a (array int))) ((res3 (array int))) 
+;;        (let ((e int)) (@ get-array a i) 
+;;        (let ((i2 int)) (@ + i (the int 1)) 
+;;        (let ((ap (array int))) (@ set-array a i2 e) 
+;;        (let ((i3 int)) (@ - i (the int 1)) (@ f2 x m i3 ap))))))
+;; f4
+    (f4 ((x int) (m int) (i int) (a (array int))) ((res4 (array int))) 
+        (let ((i2 int)) (@ + i (the int 1)) 
+        (let ((ap (array int))) (@ set-array a i2 x) ap)))
+  ) (let ((i int)) (@ - m (the int 1)) (@ f2 x m i a))))
+
+
+;; Local Variables:
+;; mode: common-lisp
+;; coding: utf-8
+;; End:
