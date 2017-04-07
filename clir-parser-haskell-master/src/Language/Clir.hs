@@ -17,6 +17,9 @@ module Language.Clir (
           , BindingExpression (..)
           , GeneralExpression (..)
           , TopLevelDef (..)
+          , Assertion (..)
+          , Contract (..)
+          , Spec (..)
           ) where
 
 import Prelude hiding ((.), id)
