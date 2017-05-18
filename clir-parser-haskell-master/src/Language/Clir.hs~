@@ -3,7 +3,21 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Language.Clir where
+module Language.Clir (
+            ClirType (..)
+          , TypedVar (..)
+          , VarName
+          , ConstValue (..)
+          , FunName
+          , FunctionDefinition (..)
+          , DataConstructor
+          , CaseAltPattern (..)
+          , CaseAltExpr (..)
+          , AtomicExpression (..)
+          , BindingExpression (..)
+          , GeneralExpression (..)
+          , TopLevelDef (..)
+          ) where
 
 import Prelude hiding ((.), id)
 import Control.Category
