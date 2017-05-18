@@ -4,10 +4,10 @@
 
 module DataStructures.Assertion where
 
-import qualified DataStructures.Sets as Set
-import qualified DataStructures.Sequences as Seq
-import qualified DataStructures.Arrays as A
-import qualified DataStructures.Bags as B
+import qualified Sets as Set
+import qualified Sequences as Seq
+import qualified Arrays as A
+import qualified Bags as B
 import qualified Data.Map.Lazy as M
 import qualified Data.Set as S
 import Data.Ix
