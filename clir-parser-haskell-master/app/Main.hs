@@ -223,7 +223,7 @@ constValue (ConstBool b)   = D.bool b
 bindingExpTerm :: BindingExpression -> D.Doc
 bindingExpTerm (AtomE aes)      = atomicExpTerm aes 
 bindingExpTerm (FunA fn aes)    = foldl f e aes
-  where f fn a = D.text "Aplic" D.</> 
+  where f fn a = D.text "Applic" D.</> 
                  D.indent ind (D.parens fn D.<+> D.parens (atomicExpTerm a))
         e = D.parens $ D.text "TVar" D.<+> (if isAlpha $ head fn then D.text fn 
                                             else D.parens $ D.text fn)
@@ -247,19 +247,19 @@ assertion (ATrue)    = D.text "FTerm (TConst True)"
 assertion (AFalse)   = D.text "FTerm (TConst False)"
 assertion (Not a)    = D.text "Not" D.<+> D.parens (assertion a)
 assertion (Aplic name xs)
-  |name=="="      = D.text "FTerm" D.<+>
+  |name=="="        = D.text "FTerm" D.<+>
                     foldl f (D.parens $ D.text "TVar" D.<+> D.text "(==)") xs
-  |name=="[_.._]" = D.text "FTerm" D.<+>
+  |name=="Q.[_.._]" = D.text "FTerm" D.<+>
                     foldl f (D.parens $ D.text "TVar" D.<+> D.text "subsec") xs
-  |name=="[_..]"  = D.text "FTerm" D.<+>
+  |name=="Q.[_..]"  = D.text "FTerm" D.<+>
                     foldl f (D.parens $ D.text "TVar" D.<+> D.text "subsec_ini") xs
-  |name=="[.._]"  = D.text "FTerm" D.<+>
+  |name=="Q.[.._]"  = D.text "FTerm" D.<+>
                     foldl f (D.parens $ D.text "TVar" D.<+> D.text "subsec_fin") xs
-  |otherwise      = D.text "FTerm" D.<+> 
+  |otherwise        = D.text "FTerm" D.<+> 
                     foldl f (D.parens $ D.text "TVar" D.<+> (if isAlpha $ head name 
                                                              then D.text name 
                                                              else D.parens $ D.text name)) xs
-  where f fn x = D.parens $ D.text "Aplic" D.</> 
+  where f fn x = D.parens $ D.text "Applic" D.</> 
                             D.indent ind (fn D.</> D.parens (bindingExpTerm x))
 
 assertion (And xs)   = f xs
@@ -292,7 +292,7 @@ assertion (Imp xs) = D.text "Imp" D.</>
 
 assertion (Forall [TypedVar i (SimpleType t)] (Imp xs)) = D.text "Forall" D.</>
                D.indent ind (D.parens (if (unpack t)=="int" then guardInt i xs [] [] 
-                                       else guards i (head xs)) D.</> 
+                                       else guards i xs) D.</> 
                D.parens (D.text "\\" D.<> D.text i D.<+> D.text "->" D.<+> 
                D.parens (assertion (Imp xs))))
 
@@ -304,36 +304,37 @@ assertion (Forall [TypedVar i (SimpleType ti), TypedVar j (SimpleType tj)] (Imp 
                     D.text "->" D.<+> D.parens (assertion (Imp xs))))
                else D.empty
 
--- assertion (Forall [TypedVar a _] (Imp [g,q])) = D.parens $ D.text "Forall" D.<+> (guards a g) D.<+> 
-                                                -- D.parens (D.text a D.<+> D.text "->" D.<+> (assertion (Imp [g,q])))
+assertion (Forall [TypedVar a _] (Imp xs)) = D.parens $ D.text "Forall" D.<+> (guards a xs)
+               D.<+> D.parens (D.text a D.<+> D.text "->" D.<+> (assertion (Imp xs)))
 
-assertion (Exists [TypedVar i (SimpleType t)] (Imp xs)) = D.text "Exists" D.</>
+assertion (Exists [TypedVar i (SimpleType t)] (And xs)) = D.text "Exists" D.</>
                D.indent ind (D.parens (if (unpack t)=="int" then guardInt i xs [] []
-                                       else guards i (head xs)) D.</> 
+                                       else guards i xs) D.</> 
                D.parens (D.text "\\" D.<> D.text i D.<+> D.text "->" D.<+> 
-               D.parens (assertion (Imp xs))))
+               D.parens (assertion (And xs))))
 
-assertion (Exists [TypedVar i (SimpleType ti), TypedVar j (SimpleType tj)] (Imp xs)) = 
+assertion (Exists [TypedVar i (SimpleType ti), TypedVar j (SimpleType tj)] (And xs)) = 
                if (unpack ti)=="int"&&(unpack tj)=="int" 
                then D.text "Exists" D.</> D.indent ind 
                    (D.parens (guardIntTuple i j xs [] [] [] [] "none") D.</> 
                     D.parens (D.text "\\" D.<> D.tuple [D.text i,D.text j] D.<+> 
-                    D.text "->" D.<+> D.parens (assertion (Imp xs))))
+                    D.text "->" D.<+> D.parens (assertion (And xs))))
                else D.empty
 
--- assertion (Exists [TypedVar a _] (Imp [g,q])) = D.parens $ D.text "Exists" D.<+> (guards a g) D.<+> 
-                                                -- D.parens (D.text a D.<+> D.text "->" D.<+> (assertion (Imp [g,q])))
+assertion (Exists [TypedVar a _] (And xs)) = D.parens $ D.text "Exists" D.<+> (guards a xs)
+               D.<+> D.parens (D.text a D.<+> D.text "->" D.<+> (assertion (And xs)))
 
 
 guardInt::String -> [Assertion] -> [D.Doc] -> [D.Doc] -> D.Doc
 guardInt i [Imp xs] mins maxs = guardInt i xs mins maxs
+guardInt i [And xs] mins maxs = guardInt i xs mins maxs
 
 guardInt _ [_] mins maxs = D.text "GuardInt" D.<+> docmins D.<+> docmaxs
   where docmins = if (length mins)==1 then (head mins) 
-                  else D.parens (D.text "Aplic (TVar maximum) (TVar" D.<+>
+                  else D.parens (D.text "Applic (TVar maximum) (TVar" D.<+>
                                  D.list mins D.<> D.rparen)
         docmaxs = if (length maxs)==1 then (head maxs) 
-                  else D.parens (D.text "Aplic (TVar minimum) (TVar" D.<+> 
+                  else D.parens (D.text "Applic (TVar minimum) (TVar" D.<+> 
                                  D.list maxs D.<> D.rparen)
 
 guardInt i ((Aplic op [AtomE (Var v1), AtomE (Var v2)]):gs) mins maxs = if v1==i
@@ -358,6 +359,8 @@ guardIntTuple::String -> String -> [Assertion] ->
               [D.Doc] -> [D.Doc] -> [D.Doc] -> [D.Doc] -> String -> D.Doc
 guardIntTuple i j [Imp xs] mins1 maxs1 mins2 maxs2 rel = 
                    guardIntTuple i j xs mins1 maxs1 mins2 maxs2 rel
+guardIntTuple i j [And xs] mins1 maxs1 mins2 maxs2 rel = 
+                   guardIntTuple i j xs mins1 maxs1 mins2 maxs2 rel
 
 guardIntTuple _ _ [_] mins1 maxs1 mins2 maxs2 rel = D.text "GuardIntTuple" D.</>
       D.indent ind (D.parens (D.text "Tuple2" D.<+> docminsi D.<+> docminsj) D.</> 
@@ -368,16 +371,16 @@ guardIntTuple _ _ [_] mins1 maxs1 mins2 maxs2 rel = D.text "GuardIntTuple" D.</>
         (maxsi,minsj) = if rel=="lt" then ((maxs1++maxs2),(mins1++mins2)) 
                         else (maxs1,mins2)
         docminsi = if (length minsi)==1 then (head minsi) 
-                   else D.parens (D.text "Aplic (TVar maximum) (TVar" D.<+>
+                   else D.parens (D.text "Applic (TVar maximum) (TVar" D.<+>
                                   D.list minsi D.<> D.rparen)
         docminsj = if (length minsj)==1 then (head minsj) 
-                   else D.parens (D.text "Aplic (TVar maximum) (TVar" D.<+>
+                   else D.parens (D.text "Applic (TVar maximum) (TVar" D.<+>
                                   D.list minsj D.<> D.rparen)
         docmaxsi = if (length maxsi)==1 then (head maxsi)
-                   else D.parens (D.text "Aplic (TVar minimum) (TVar" D.<+>
+                   else D.parens (D.text "Applic (TVar minimum) (TVar" D.<+>
                                   D.list maxsi D.<> D.rparen)
         docmaxsj = if (length maxsj)==1 then (head maxsj)
-                   else D.parens (D.text "Aplic (TVar minimum) (TVar" D.<+>
+                   else D.parens (D.text "Applic (TVar minimum) (TVar" D.<+>
                                   D.list maxsj D.<> D.rparen)
 
 guardIntTuple i j ((Aplic op [AtomE (Var v1), AtomE (Var v2)]):gs) 
@@ -428,13 +431,23 @@ inverseOp op = case op of
 calculateMinMax:: String -> BindingExpression -> ([D.Doc],[D.Doc])
 calculateMinMax op exp = case op of
   ">=" -> ([D.parens $ bindingExpTerm exp],[])
-  ">"  -> ([D.parens $ D.text "Aplic" D.<+>
-           (D.parens $ D.text "Aplic (TVar (+))" D.<+> bindingExpTerm exp) D.<+> 
+  ">"  -> ([D.parens $ D.text "Applic" D.<+>
+           (D.parens $ D.text "Applic (TVar (+))" D.<+> D.parens (bindingExpTerm exp)) D.<+> 
            (D.parens $ D.text "TConst" D.<+> D.int 1)],[])
   "<=" -> ([],[D.parens $ bindingExpTerm exp])
-  "<"  -> ([],[D.parens $ D.text "Aplic" D.<+>
-              (D.parens $ D.text "Aplic (TVar (-))" D.<+> bindingExpTerm exp) D.<+>
+  "<"  -> ([],[D.parens $ D.text "Applic" D.<+>
+              (D.parens $ D.text "Applic (TVar (-))" D.<+> D.parens (bindingExpTerm exp)) D.<+>
               (D.parens $ D.text "TConst" D.<+> D.int 1)])
 
---Set SEQ y bag
-guards a (Aplic "mem" [AtomE (Var v), exp]) = D.parens $ D.text "GuardSeq" D.<+> D.parens (bindingExp exp)
+
+guards :: String -> [Assertion] -> D.Doc
+guards a ((Aplic "Q.mem" [AtomE (Var v), exp]):gs) = case v==a of
+  True  -> D.parens $ D.text "GuardSeq" D.<+> D.parens (bindingExp exp)
+  False -> D.empty
+guards a ((Aplic "S.mem" [AtomE (Var v), exp]):gs) = case v==a of
+  True  -> D.parens $ D.text "GuardSet" D.<+> D.parens (bindingExp exp)
+  False -> D.empty
+guards a ((Aplic "B.mem" [AtomE (Var v), exp]):gs) = case v==a of
+  True  -> D.parens $ D.text "GuardBag" D.<+> D.parens (bindingExp exp)
+  False -> D.empty
+guards a (g:gs) = guards a gs
