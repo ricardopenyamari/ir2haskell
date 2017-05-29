@@ -17,48 +17,48 @@ import DataStructures.Assertion
 
 uutPrec x m a = evalA $
   And
-    (FTerm (Aplic
-              (Aplic
+    (FTerm (Applic
+              (Applic
                  (TVar (<=))
                  ((TConst 0)))
               ((TVar m))))
     (And
-       (FTerm (Aplic
-                 (Aplic
+       (FTerm (Applic
+                 (Applic
                     (TVar (<))
                     ((TVar m)))
-                 (Aplic
+                 (Applic
                     ((TVar A.len)) ((TVar a)))))
        (Forall
           (GuardIntTuple
              (Tuple2 ((TConst 0)) ((TConst 0)))
-             (Tuple2 (Aplic (Aplic (TVar (-)) (TVar m)) (TConst 1)) (Aplic (Aplic (TVar (-)) (TVar m)) (TConst 1))))
+             (Tuple2 (Applic (Applic (TVar (-)) (TVar m)) (TConst 1)) (Applic (Applic (TVar (-)) (TVar m)) (TConst 1))))
           (\(i, j) -> (Imp
-                         (FTerm (Aplic
-                                   (Aplic
+                         (FTerm (Applic
+                                   (Applic
                                       (TVar (<=))
                                       ((TConst 0)))
                                    ((TVar i))))
                          (Imp
-                            (FTerm (Aplic
-                                      (Aplic
+                            (FTerm (Applic
+                                      (Applic
                                          (TVar (<=))
                                          ((TVar i)))
                                       ((TVar j))))
                             (Imp
-                               (FTerm (Aplic
-                                         (Aplic
+                               (FTerm (Applic
+                                         (Applic
                                             (TVar (<))
                                             ((TVar j)))
                                          ((TVar m))))
-                               (FTerm (Aplic
-                                         (Aplic
+                               (FTerm (Applic
+                                         (Applic
                                             (TVar (<=))
-                                            (Aplic
-                                               (Aplic
+                                            (Applic
+                                               (Applic
                                                   ((TVar A.get)) ((TVar a))) ((TVar i))))
-                                         (Aplic
-                                            (Aplic
+                                         (Applic
+                                            (Applic
                                                ((TVar A.get)) ((TVar a))) ((TVar j)))))))))))
 insert x m a =
   let i = (-) m 1 in
@@ -87,30 +87,30 @@ uutPost x m a res = evalA $
        (Tuple2 ((TConst 0)) ((TConst 0)))
        (Tuple2 ((TVar m)) ((TVar m))))
     (\(i, j) -> (Imp
-                   (FTerm (Aplic
-                             (Aplic
+                   (FTerm (Applic
+                             (Applic
                                 (TVar (<=))
                                 ((TConst 0)))
                              ((TVar i))))
                    (Imp
-                      (FTerm (Aplic
-                                (Aplic
+                      (FTerm (Applic
+                                (Applic
                                    (TVar (<=))
                                    ((TVar i)))
                                 ((TVar j))))
                       (Imp
-                         (FTerm (Aplic
-                                   (Aplic
+                         (FTerm (Applic
+                                   (Applic
                                       (TVar (<=))
                                       ((TVar j)))
                                    ((TVar m))))
-                         (FTerm (Aplic
-                                   (Aplic
+                         (FTerm (Applic
+                                   (Applic
                                       (TVar (<=))
-                                      (Aplic
-                                         (Aplic
+                                      (Applic
+                                         (Applic
                                             ((TVar A.get)) ((TVar res))) ((TVar i))))
-                                   (Aplic
-                                      (Aplic
+                                   (Applic
+                                      (Applic
                                          ((TVar A.get)) ((TVar res))) ((TVar j)))))))))
 
