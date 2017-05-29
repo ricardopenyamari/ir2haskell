@@ -17,14 +17,14 @@
    (assertion
     (precd (and (@ <= (the int 0) m) (@ < m (@ A.len a)) (forall ((i int) (j int)) 
                 (-> (@ <= (the int 0) i) 
-                (-> (@ <= i j) 
-                (-> (@ < j m) 
-                    (@ <= (@ A.get a i) (@ A.get a j))))))))
+                    (@ <= i j) 
+                    (@ < j m) 
+                    (@ <= (@ A.get a i) (@ A.get a j))))))
     (postcd (forall ((i int) (j int)) 
                 (-> (@ <= (the int 0) i) 
-                (-> (@ <= i j) 
-                (-> (@ <= j m) 
-                    (@ <= (@ A.get res i) (@ A.get res j)))))))))
+                    (@ <= i j) 
+                    (@ <= j m) 
+                    (@ <= (@ A.get res i) (@ A.get res j)))))))
   (letfun (
 ;; f1
 ;;    (f1 ((x int) (m int) (a (array int))) ((res1 (array int))) 
