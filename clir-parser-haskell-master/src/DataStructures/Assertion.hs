@@ -53,7 +53,7 @@ data Term a where
     TVar   :: a -> Term a
     TIf    :: Term Bool -> Term a -> Term a -> Term a
     TLet   :: Term a -> (a -> Term b) -> Term b
-    Aplic  :: Term (a -> b) -> Term a -> Term b
+    Applic :: Term (a -> b) -> Term a -> Term b
     Tuple2 :: Term a -> Term b -> Term (a,b)
     Tuple3 :: Term a -> Term b -> Term c -> Term (a,b,c)
 
@@ -64,7 +64,7 @@ evalT (TConst c)        = c
 evalT (TVar x)          = x
 evalT (TIf tb t1 t2)    = if evalT tb then evalT t1 else evalT t2
 evalT (TLet t f)        = evalT $ f (evalT t)
-evalT (Aplic tf ta)     = evalT tf $ evalT ta
+evalT (Applic tf ta)    = evalT tf $ evalT ta
 evalT (Tuple2 t1 t2)    = (evalT t1, evalT t2)
 evalT (Tuple3 t1 t2 t3) = (evalT t1, evalT t2, evalT t3)
 
