@@ -175,7 +175,7 @@ data Assertion = ATrue
                | Or [Assertion]
                | Imp [Assertion]
                | Equiv [Assertion]
-               | Aplic PredName [BindingExpression]
+               | Aplic PredName [GeneralExpression]
                | Forall [TypedVar] Assertion
                | Exists [TypedVar] Assertion
                deriving (Show, Eq, Ord, Generic)

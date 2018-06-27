@@ -108,7 +108,7 @@ data Assertion = ATrue
                | Or [Assertion]
                | Imp [Assertion]
                | Equiv [Assertion]
-               | Aplic PredName [BindingExpression]
+               | Aplic PredName [GeneralExpression]
                | Forall [TypedVar] Assertion
                | Exists [TypedVar] Assertion
                deriving (Show, Eq, Ord, Generic)
@@ -261,7 +261,7 @@ assertion (Aplic name xs)
                                                              then D.text name 
                                                              else D.parens $ D.text name)) xs
   where f fn x = D.parens $ D.text "Applic" D.</> 
-                            D.indent ind (fn D.</> D.parens (bindingExpTerm x))
+                            D.indent ind (fn D.</> D.parens (generalExp x)) -- @@@
 
 assertion (And xs)   = f xs
   where f xs = case xs of
@@ -338,19 +338,19 @@ guardInt _ [_] mins maxs = D.text "GuardInt" D.<+> docmins D.<+> docmaxs
                   else D.parens (D.text "Applic (TVar minimum) (TVar" D.<+> 
                                  D.list maxs D.<> D.rparen)
 
-guardInt i ((Aplic op [AtomE (Var v1), AtomE (Var v2)]):gs) mins maxs = if v1==i
+guardInt i ((Aplic op [Binding (AtomE (Var v1)), Binding (AtomE (Var v2))]):gs) mins maxs = if v1==i
       then (let (min,max)=(calculateMinMax op (AtomE (Var v2))) 
             in (guardInt i gs (min++mins) (max++maxs)))
       else if v2==i then (let (min,max)=(calculateMinMax (inverseOp op) (AtomE (Var v1)))
                           in (guardInt i gs (min++mins) (max++maxs)))
       else (guardInt i gs mins maxs)
 
-guardInt i ((Aplic op [AtomE (Var v), exp]):gs) mins maxs = 
+guardInt i ((Aplic op [Binding (AtomE (Var v)), Binding exp]):gs) mins maxs = 
       if v==i then (let (min,max)=(calculateMinMax op exp) 
                     in (guardInt i gs (min++mins) (max++maxs)))
       else (guardInt i gs mins maxs)
 
-guardInt i ((Aplic op [exp, AtomE (Var v)]):gs) mins maxs = if v==i
+guardInt i ((Aplic op [Binding exp, Binding (AtomE (Var v))]):gs) mins maxs = if v==i
       then (let (min,max)=(calculateMinMax (inverseOp op) exp) 
             in (guardInt i gs (min++mins) (max++maxs)))
       else (guardInt i gs mins maxs)
@@ -384,7 +384,7 @@ guardIntTuple _ _ [_] mins1 maxs1 mins2 maxs2 rel = D.text "GuardIntTuple" D.</>
                    else D.parens (D.text "Applic (TVar minimum) (TVar" D.<+>
                                   D.list maxsj D.<> D.rparen)
 
-guardIntTuple i j ((Aplic op [AtomE (Var v1), AtomE (Var v2)]):gs) 
+guardIntTuple i j ((Aplic op [Binding (AtomE (Var v1)), Binding (AtomE (Var v2))]):gs) 
   mins1 maxs1 mins2 maxs2 rel =
         if (v1==i&&v2==j&&(op=="<="||op=="<"))||(v1==j&&v2==i&&(op==">="||op==">"))
           then (guardIntTuple i j gs mins1 maxs1 mins2 maxs2 "lt")
@@ -404,7 +404,7 @@ guardIntTuple i j ((Aplic op [AtomE (Var v1), AtomE (Var v2)]):gs)
                 in (guardIntTuple i j gs mins1 maxs1 (min++mins2) (max++maxs2) rel))
         else (guardIntTuple i j gs mins1 maxs1 mins2 maxs2 rel)
 
-guardIntTuple i j ((Aplic op [AtomE (Var v), exp]):gs) mins1 maxs1 mins2 maxs2 rel =
+guardIntTuple i j ((Aplic op [Binding (AtomE (Var v)), Binding exp]):gs) mins1 maxs1 mins2 maxs2 rel =
         if v==i 
           then (let (min,max)=(calculateMinMax op exp) 
                 in (guardIntTuple i j gs (min++mins1) (max++maxs1) mins2 maxs2 rel))
@@ -413,7 +413,7 @@ guardIntTuple i j ((Aplic op [AtomE (Var v), exp]):gs) mins1 maxs1 mins2 maxs2 r
                 in (guardIntTuple i j gs mins1 maxs1 (min++mins2) (max++maxs2) rel))
         else (guardIntTuple i j gs mins1 maxs1 mins2 maxs2 rel)
 
-guardIntTuple i j ((Aplic op [exp, AtomE (Var v)]):gs) mins1 maxs1 mins2 maxs2 rel =
+guardIntTuple i j ((Aplic op [Binding exp, Binding (AtomE (Var v))]):gs) mins1 maxs1 mins2 maxs2 rel =
         if v==i 
           then (let (min,max)=(calculateMinMax (inverseOp op) exp) 
                 in (guardIntTuple i j gs (min++mins1) (max++maxs1) mins2 maxs2 rel))
@@ -442,13 +442,18 @@ calculateMinMax op exp = case op of
 
 
 guards :: String -> [Assertion] -> D.Doc
-guards a ((Aplic "Q.mem" [AtomE (Var v), exp]):gs) = case v==a of
+guards a ((Aplic "Q.mem" [Binding (AtomE (Var v)), Binding exp]):gs) = case v==a of
   True  -> D.parens $ D.text "GuardSeq" D.<+> D.parens (bindingExp exp)
   False -> D.empty
-guards a ((Aplic "S.mem" [AtomE (Var v), exp]):gs) = case v==a of
+guards a ((Aplic "S.mem" [Binding (AtomE (Var v)), Binding exp]):gs) = case v==a of
   True  -> D.parens $ D.text "GuardSet" D.<+> D.parens (bindingExp exp)
   False -> D.empty
-guards a ((Aplic "B.mem" [AtomE (Var v), exp]):gs) = case v==a of
+guards a ((Aplic "B.mem" [Binding (AtomE (Var v)), Binding exp]):gs) = case v==a of
   True  -> D.parens $ D.text "GuardBag" D.<+> D.parens (bindingExp exp)
   False -> D.empty
 guards a (g:gs) = guards a gs
+
+
+
+
+
