@@ -25,7 +25,7 @@ module Language.Clir (
 import Prelude hiding ((.), id)
 import Control.Category
 import Data.Scientific as Scientific
-import Data.Text (Text)
+import Data.Text (Text,unpack)
 import qualified Data.List as L
 import qualified Language.Sexp as Sexp
 import Language.SexpGrammar
@@ -125,7 +125,10 @@ instance Show GeneralExpression where
         (showString $ L.intercalate "\n   " (map show alts))
 
 data TopLevelDef = TopFunDef FunName [TypedVar] [TypedVar] [Contract] GeneralExpression
-                 | OtherInfo String String String String 
+                   -- The first string is the module name; 
+                   -- the string list contains the imported modules; the last three strings respectively
+                   -- are the source language, the used theories, and a documentation line
+                 | OtherInfo String [String] String String String
                  deriving (Eq, Ord, Generic)
 
 instance Show TopLevelDef where
@@ -133,8 +136,9 @@ instance Show TopLevelDef where
      showString ("\n\ndefine " ++ fn ++ show args ++ show ress ++ "\n") .
      (showString $ L.intercalate "\n   " (map show cs)) .
      showString ("\n") . shows e
-  showsPrec _ (OtherInfo s1 s2 s3 s4) = showString $ L.intercalate "\n"
-                                        ["\nverification unit: "++s1,s2,s3,s4]
+  showsPrec _ (OtherInfo s1 ss s2 s3 s4) = showString $ L.intercalate "\n"
+                               ["\nverification unit: "++s1, "imports: "++ L.intercalate ", " ss,
+                                "sources: "++s2, "uses: "++s3, "documentation: "++s4]
 
 
 -- The AST for contracts
@@ -356,14 +360,26 @@ instance SexpIso TopLevelDef where
                                               push []         >>>
                                               el sexpIso)
                                       ])
-    $ With (\other -> other . (list (el (sym "verification-unit") >>>
-                                     el string'  >>>
-                                     props (
-                                        Kw "sources" .: string' >>>
-                                        Kw "uses"    .: string' >>>
-                                        Kw "documentation" .: string')))) 
+    $ With (\other -> other . coproduct [ list (el (sym "verification-unit") >>>
+                                                el string'  >>>
+                                                el imports  >>>
+                                                props (
+                                                 Kw "sources" .: string' >>>
+                                                 Kw "uses"    .: string'  >>>
+                                                 Kw "documentation" .: string'))
+                                        , list (el (sym "verification-unit") >>>
+                                                el string'  >>>
+                                                push []     >>>
+                                                props (
+                                                 Kw "sources" .: string' >>>
+                                                 Kw "uses"    .: string'  >>>
+                                                 Kw "documentation" .: string'))
+                                      ])
     $ End
 
+imports :: Grammar SexpGrammar (Sexp :- t) ([String] :- t)
+imports = list (el (sym "import") >>>
+                    rest string')
 
 -----------------------------------------------------------------------------------------
 -- Parser for contracts. All are ignored except the preconditions and postconditions
@@ -371,8 +387,8 @@ instance SexpIso TopLevelDef where
 
 
 contracts :: Grammar SexpGrammar (Sexp :- t) ([Contract] :- t)
-contracts = (list ((el (sym "declare")) >>>
-                    rest sexpIso))
+contracts = list (el (sym "declare") >>>
+                      rest sexpIso)
 
 --contractList :: Grammar SexpGrammar (Sexp :- t) ([Contract] :- t)
 --contractList = sexpIso

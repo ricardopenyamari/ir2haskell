@@ -6,8 +6,9 @@
 ;; End of bogus instruction
 
 (verification-unit "insert"
-		   :sources "(((:lang :erlang)  (:module /insert.erl)))"
-		   :uses "(:ir)"
+  (import "uno" "dos")
+		   :sources " "
+		   :uses " "
 		   :documentation "This is the implementation of a verified insertion sort in CLIR")
 
 
